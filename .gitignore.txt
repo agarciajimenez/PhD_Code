@@ -1,0 +1,6 @@
+*.jpg
+*.docx
+/Output
+/Raw_Data
+*.Rhistory
+/.Rproj.user/
