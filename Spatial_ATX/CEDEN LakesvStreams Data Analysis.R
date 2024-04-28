@@ -12,6 +12,12 @@ library(leaflet)
 library(lubridate)
 library(ggplot2)
 
+# setwd
+getwd()
+setwd("./Raw_Data")
+getwd()
+list.files()
+
 # Load data set ----
 
 data <- read_csv("CEDEN_allyears_ATX.csv")
