@@ -12,15 +12,9 @@ library(leaflet)
 library(lubridate)
 library(ggplot2)
 
-# setwd
-getwd()
-setwd("./Raw_Data")
-getwd()
-list.files()
-
 # Load data set ----
 
-data <- read_csv("CEDEN_allyears_ATX.csv")
+data <- read_csv("~/PhD_Code/Spatial_ATX/Raw_Data/CEDEN_allyears_ATX.csv")
 
 # Start by filtering out the lab samples 
 ## They do not have stations, lat/longs
@@ -116,33 +110,6 @@ ggplot(aes(x = LocationType, y = proportion, fill = as.factor(Year))) +
 # Save plot to fit in conference poster
 ggsave("ggplot.png", plot = last_plot(), width = 10, height = 8, units = "in", dpi = 300)
 
-
-# MAPPING ----
-
-# Mapping ATX in streams, rivers, and creeks using leaflet package
-## Start by creating a proportional marker depending on result
-
-ATX_total_streams_log <- ATX_total_streams %>%
-  filter(Result > 0) %>% 
-  mutate(logResult = log(Result))
-
-scale_marker_size <- function(result_value) {
-  # Adjust the scaling factor to make markers smaller
-  scaled_size <- sqrt(result_value) * 2  # Adjust the scaling factor as needed
-  return(scaled_size)
-}
-
-pal <- colorNumeric(palette = c("blue", "red"), domain = ATX_total_streams$Result)
-
-map_streams <- leaflet() %>% 
-  addTiles() %>%
-  addCircleMarkers(radius = ~ scale_marker_size(logResult),
-                   data = ATX_total_streams_log, 
-                   lat = ~Latitude,
-                   lng = ~Longitude,
-                   color = ~pal(Result))
-
-map_streams
 
 
 

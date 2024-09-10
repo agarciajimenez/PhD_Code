@@ -12,7 +12,7 @@ library(lubridate)
 library(readr)
 
 # Load data set ----
-data <- read_csv("CEDEN_allyears_ATX.csv")
+data <- read_csv("~/PhD_Code/Spatial_ATX/Raw_Data/CEDEN_allyears_ATX.csv")
 
 # Start by filtering out the lab samples 
 ## They do not have stations, lat/longs

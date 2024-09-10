@@ -11,7 +11,7 @@ library(leaflet)
 library(lubridate)
 library(readr)
 # Load data set ----
-data <- read_csv("CEDEN_allyears_ATX.csv")
+data <- read_csv("~/PhD_Code/Spatial_ATX/Raw_Data/CEDEN_allyears_ATX.csv")
 
 # Start by filtering out the lab samples 
 ## They do not have stations, lat/longs
@@ -118,6 +118,14 @@ method_counts_anatoxin <- method_counts_anatoxin %>%
 # View the counts and percentage for "Anatoxin-A, Total" analyte
 print(method_counts_anatoxin)
 
+# Plot percentages
+
+ggplot(method_counts_anatoxin, aes(x = MethodName, y = percentage, fill = MethodName)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ LocationType, scales = "free") +
+  labs(x = "Method Name", y = "Percentage", 
+       title = "Percentage of Each Method Separated by Lake and Streams") +
+  theme_minimal()
 
 # Finding total lakes and streams  ----
 counts <- selected_data %>% 
@@ -158,21 +166,6 @@ ATX_counts <- detections %>%
   )) %>% 
   filter(LocationType != "Other")
 
-
-### Calculating results above thresholds ----
-stream_only <- ATX_counts %>% 
-  filter(LocationType == "Stream")
-
-recreation_threshold <- stream_only %>% 
-  filter(Result > 90)
-
-percent_recreation_threshold <- (nrow(recreation_threshold) / nrow(stream_only)) * 100
-cat("Percent of streams with Result >90:", round(percent_recreation_threshold, 2), "%\n")
-
-dog_threshold <- stream_only %>% 
-  filter(Result > 100)
-percent_dog_threshold <- (nrow(dog_threshold) / nrow(stream_only)) * 100
-cat("Percent of streams with Result >100:", round(percent_dog_threshold, 2), "%\n")
 
 # Calculate range and median for lakes ----
 lakes_result_range <- range(ATX_counts$Result[ATX_counts$LocationType == "Lake"], na.rm = TRUE)
@@ -224,14 +217,14 @@ ggplot(ATX_counts, aes(x = LocationType, fill = LocationType)) +
 # Making the counts into proportions ----
 ATX_proportion <- ATX_counts %>%
   group_by(LocationType) %>%
-  summarize(Proportion = n() / nrow(ATX_counts))
+  summarize(Percentage = (n() / nrow(ATX_counts)) *100)
 
 # Plotting detected ATX based on location
-ggplot(ATX_proportion, aes(x = LocationType, y = Proportion, fill = LocationType)) +
+ggplot(ATX_proportion, aes(x = LocationType, y = Percentage, fill = LocationType)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c("Lake" = "skyblue", "Stream" = "orange"), labels = c("Lakes", "Streams")) +
-  labs(x = "Location Type", y = "Proportion Detected", 
-       title = "Proportion of Anatoxin-A Detection by Location Type") +
+  labs(x = "Location Type", y = "% Detected", 
+       title = "Percent of Anatoxin-A Detection by Location Type") +
   theme_minimal()
 
 ####### Splitting into collection methods ######## ----
@@ -261,13 +254,33 @@ detections_by_method_location <- detections_by_method_location %>%
   left_join(total_detections, by = "LocationType") %>%
   mutate(detection_percentage = detections / total_detections * 100)
 
-# Plotting detection percentage by CollectionMethodName and LocationType
+# Plotting detection percentage by CollectionMethodName and LocationType ----
+## Changung the collection names to fit in the axis
+library(stringr)
+new_labels <- c("Algal Mat_Benthic" = "Benthic Algal Mat",
+                "Algal Mat_Surface" = "Surface Algal Mat",
+                "Scum" = "Scum",
+                "Water_Grab" = "Water Grab",
+                "Water_Integrated_Horizontal" = "Integrated Water Grab")
+
+## We only care about stream and lakes, so I will filter out other locations
+detections_by_method_location <- detections_by_method_location %>% 
+  filter(!is.na(LocationType))
+
 ggplot(detections_by_method_location, aes(x = CollectionMethodName, y = detection_percentage, fill = CollectionMethodName)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~LocationType) +  # Separate plots for Stream and Lake
   labs(x = "Collection Method", y = "Detection Percentage", 
-       title = "Anatoxin-A Detection Percentage by Collection Method and Location Type") +
-  theme_minimal()
+       title = "Collection Method",
+       fill = "Collection Method") +
+  theme_minimal() +
+  scale_x_discrete(labels=function(x) str_wrap(new_labels[x], width = 10)) +
+  scale_fill_discrete(labels = function(x) str_wrap(new_labels[x], width = 10)) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save plot to fit in conference poster
+ggsave("CollectionMethod.png", plot = last_plot(), width = 10, height = 8, units = "in", dpi = 300)
 
 # Calculating percentage of collection method in streams----
 stream_detections_by_method <- stream_only %>%
@@ -295,3 +308,4 @@ lake_only_by_method <- lake_by_collection_method %>%
   mutate(percentage = (detections / total_detections_lakes)* 100)
 
 print(lake_only_by_method)
+
