@@ -4,3 +4,7 @@
 /Raw_Data
 *.Rhistory
 /.Rproj.user/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
